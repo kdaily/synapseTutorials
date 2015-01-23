@@ -9,9 +9,15 @@ An example of changing a column type, keeping the same data.
 
 First, set the column name that you want to change, and the table it comes from.
 
+```{r libs}
+library(synapseClient)
+synapseLogin()
+```
+
+
 ```{r}
-columnToChange <- "Replicate"
-tableId <- "syn3131513"
+columnToChange <- "name"
+tableId <- "syn3079803"
 ```
 
 Get the existing data.
@@ -24,6 +30,11 @@ oldData <- oldDataQuery@values
 ```
 
 Now that you have the data, figure out how you delete a column. Currently, I do it in the web client.
+```{r}
+collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
+oldTable$properties$columnIds <- setdiff(oldTable$properties$columnIds, collist[columnToChange])
+synStore(oldTable)
+```
 
 After deleting the column, get the table again:
 
@@ -34,8 +45,8 @@ newTable <- synGet(tableId)
 Make a new column with same name and save it to Synapse. In this case I'm just changing the maximum size.
 
 ```{r}
-newrepcol <- TableColumn(name=columnToChange, columnType="STRING", maximumSize=50, defaultValue="")
-newcol <- synStore(newrepcol)
+newcol <- TableColumn(name=columnToChange, columnType="STRING", maximumSize=50, defaultValue="")
+newcol <- synStore(newcol)
 ```
 
 Add that column to the table and save:
@@ -50,8 +61,8 @@ newTable <- synStore(newTable)
 Now, make changes and save to Synapse. In this case I just copy the old data to the new column.
 
 ```{r}
-newQuery <- synTableQuery(sprintf("SELECT * FROM %s", sampleProcessMetadataTable$properties$id))
-newQuery@values[columnToChange] <- oldData$Replicate
+newQuery <- synTableQuery(sprintf("SELECT * FROM %s", newTable$properties$id))
+newQuery@values[columnToChange] <- oldData[columnToChange]
 
 ## Commit the changes
 synStore(newQuery)
