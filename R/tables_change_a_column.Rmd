@@ -1,0 +1,58 @@
+---
+title: "Synapse Tables - Changing a Column"
+author: "Kenneth Daily"
+date: "01/23/2015"
+output: html_document
+---
+
+An example of changing a column type, keeping the same data.
+
+First, set the column name that you want to change, and the table it comes from.
+
+```{r}
+columnToChange <- "Replicate"
+tableId <- "syn3131513"
+```
+
+Get the existing data.
+
+```{r}
+## Get the existing data
+oldTable <- synGet(tableId)
+oldDataQuery <- synTableQuery(sprintf("SELECT * FROM %s", oldTable$properties$id))
+oldData <- oldDataQuery@values
+```
+
+Now that you have the data, figure out how you delete a column. Currently, I do it in the web client.
+
+After deleting the column, get the table again:
+
+```{r}
+newTable <- synGet(tableId)
+```
+
+Make a new column with same name and save it to Synapse. In this case I'm just changing the maximum size.
+
+```{r}
+newrepcol <- TableColumn(name=columnToChange, columnType="STRING", maximumSize=50, defaultValue="")
+newcol <- synStore(newrepcol)
+```
+
+Add that column to the table and save:
+
+```{r}
+
+newTable$properties$columnIds <- c(newTable$properties$columnIds, newcol@id)
+newTable <- synStore(newTable)
+
+```
+
+Now, make changes and save to Synapse. In this case I just copy the old data to the new column.
+
+```{r}
+newQuery <- synTableQuery(sprintf("SELECT * FROM %s", sampleProcessMetadataTable$properties$id))
+newQuery@values[columnToChange] <- oldData$Replicate
+
+## Commit the changes
+synStore(newQuery)
+```
