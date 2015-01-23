@@ -29,7 +29,8 @@ oldDataQuery <- synTableQuery(sprintf("SELECT * FROM %s", oldTable$properties$id
 oldData <- oldDataQuery@values
 ```
 
-Now that you have the data, figure out how you delete a column. Currently, I do it in the web client.
+Now that you have the data, delete the column.
+
 ```{r}
 collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
 oldTable$properties$columnIds <- setdiff(oldTable$properties$columnIds, collist[columnToChange])
