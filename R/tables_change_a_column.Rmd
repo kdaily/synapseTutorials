@@ -29,7 +29,7 @@ oldDataQuery <- synTableQuery(sprintf("SELECT * FROM %s", oldTable$properties$id
 oldData <- oldDataQuery@values
 ```
 
-Now that you have the data, delete the column.
+Now that you have the data, delete the column. The `newTable` is now without that column.
 
 ```{r}
 collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
@@ -37,12 +37,6 @@ collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
 oldTable$properties$columnIds <- setdiff(oldTable$properties$columnIds, collist[columnToChange])
 
 newTable <- synStore(oldTable)
-```
-
-After deleting the column, get the table again:
-
-```{r}
-newTable <- synGet(tableId)
 ```
 
 Make a new column with same name and save it to Synapse. In this case I'm just changing the maximum size.
