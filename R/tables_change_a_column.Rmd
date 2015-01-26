@@ -49,10 +49,8 @@ newcol <- synStore(newcol)
 Add that column to the table and save:
 
 ```{r}
-
 newTable$properties$columnIds <- c(newTable$properties$columnIds, newcol@id)
 newTable <- synStore(newTable)
-
 ```
 
 Now, make changes and save to Synapse. In this case I just copy the old data to the new column.
@@ -81,10 +79,9 @@ changeColumn <- function(tableId, columnToChange, newColumn) {
   
   collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
   oldTable$properties$columnIds <- setdiff(oldTable$properties$columnIds, collist[columnToChange])
-  synStore(oldTable)
-
-  newTable <- synGet(tableId)
-
+  
+  newTable <- synStore(oldTable)
+  
   newTable$properties$columnIds <- c(newTable$properties$columnIds, newcol@id)
   newTable <- synStore(newTable)
 
