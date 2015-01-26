@@ -33,8 +33,10 @@ Now that you have the data, delete the column.
 
 ```{r}
 collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
+
 oldTable$properties$columnIds <- setdiff(oldTable$properties$columnIds, collist[columnToChange])
-synStore(oldTable)
+
+newTable <- synStore(oldTable)
 ```
 
 After deleting the column, get the table again:
@@ -68,3 +70,49 @@ newQuery@values[columnToChange] <- oldData[columnToChange]
 ## Commit the changes
 synStore(newQuery)
 ```
+
+All of this can go into a function:
+
+```{r}
+
+changeColumn <- function(tableId, columnToChange, newColumn) {
+  # Reqiures:
+  # Synapse ID for the table
+  # the name of the column to change
+  # a column that has already been saved to Synapse
+  
+  oldTable <- synGet(tableId)
+  oldDataQuery <- synTableQuery(sprintf("SELECT * FROM %s", oldTable$properties$id))
+  oldData <- oldDataQuery@values
+  
+  collist <- setNames(oldTable$properties$columnIds, names(oldDataQuery@values))
+  oldTable$properties$columnIds <- setdiff(oldTable$properties$columnIds, collist[columnToChange])
+  synStore(oldTable)
+
+  newTable <- synGet(tableId)
+
+  newTable$properties$columnIds <- c(newTable$properties$columnIds, newcol@id)
+  newTable <- synStore(newTable)
+
+  newTable$properties$columnIds <- c(newTable$properties$columnIds, newColumn@id)
+  newTable <- synStore(newTable)
+
+  newQuery <- synTableQuery(sprintf("SELECT * FROM %s", newTable$properties$id))
+  newQuery@values[columnToChange] <- oldData[columnToChange]
+  
+  ## Commit the changes
+  synStore(newQuery)
+
+  }
+
+```
+
+Now, the change is as such:
+
+```{r}
+newcol <- TableColumn(name=columnToChange, columnType="STRING", maximumSize=100, defaultValue="")
+newcol <- synStore(newcol)
+
+newData <- changeColumn(tableId=tableId, columnToChange=columnToChange, newColumn=newcol)
+```
+
