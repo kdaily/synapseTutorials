@@ -1,0 +1,15 @@
+---
+title: "Keeping automated RMarkdown-based analysis up-to-date in Synapse"
+author: "Kenneth Daily"
+date: "August 27, 2015"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+RMarkdown files that can rendered directly to Synapse. In general, code (RMarkdown files included) are best kept in a version controlled repository (like Github). If they generate other content (e.g., filter a file, or create a standalone figure) we want to make sure that the provenance is generated correctly, and reflects the most recent commited version. This tutorial describes how we can do this using the `synapseClient` and the `rGithubClient`.
+
