@@ -1,0 +1,68 @@
+---
+title: "Data frame to Synapse File annotations"
+author: "Kenneth Daily"
+date: "November 17, 2015"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This tutorial shows how to add annotations to a bunch of files from a data frame.
+
+First, I get some metadata from a Synapse table - these are the annotations I want to add. Your annotation data may come from other locations, but as long as it's a data frame, you're good.
+
+```{r getmetadata}
+metadataTbl <- synTableQuery("SELECT * FROM syn2767694")
+metadata <- metadataTbl@values
+```
+
+To find the files to add annotations to, use `synQuery`.
+Multiple `synQuery` calls may be required to find everything - just `rbind` them together.
+Most importantly, the Synapse annotation `file.id` at a minimum is required.
+In many cases, `file.name` can be used to perform some regex/grep-fu to get a unique identifier.
+Hopefully, instead of this, basic annotations (like a sample ID) were added when the files were first uploaded to Synapse.
+
+```{r getfilelist}
+res <- synQuery("select id,name,C4_Cell_Line_ID from file where parentId=='syn2882776'")
+```
+
+Now, the metadata is merged with the file listing using `C4_Cell_Line_ID`.
+
+```{r mergemetadata}
+res <- left_join(res, metadata)
+```
+
+The following functions are then used to add annotations to these files. `updateAnnotations` is a helper function, and should not be called directly.
+
+The `dfToAnnotations` function takes a data frame that has (at least) a column `file.id` and any number of other columns to use as annotations. It automatically removes column names that start with `file.`, `entity.`, and `folder.`, as these are things that Synapse returns when using `synQuery` and don't need to be added as annotations.
+
+```{r cars}
+updateAnnotations <- function(x, colsToIgnore=NULL) {
+  obj <- synapseClient::synGet(x$file.id, downloadFile=FALSE)
+  synapseClient::synSetAnnotations(obj) <- as.list(x[, -colsToIgnore])
+  obj <- synapseClient::synStore(obj, forceVersion=FALSE)
+}
+
+dfToAnnotations <- function(df){
+  colsToIgnore <- which(apply(sapply(c("^entity\\..*", "^file\\..*", "^folder\\..*"), 
+                                     function(x) stringr::str_detect(colnames(df), x)),
+                              1, any))
+  
+  objs <- plyr::dlply(df, .(file.id), 
+                      updateAnnotations, colsToIgnore=colsToIgnore,
+                      .progress="text")
+  objs
+}
+```
+
+So, I call this function, and my annotations are updated:
+
+```{r}
+dfToAnnotations(res)
+```
+
+Note that this will replace annotations if they exist for a particular key-value pair.
